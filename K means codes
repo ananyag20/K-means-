@@ -1,0 +1,61 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+from sklearn.metrics import silhouette_score
+
+# Step 1: Load the dataset
+file_path = r"C:\Users\anany\Downloads\archive (1)\Dataset_spine.csv"
+df = pd.read_csv(file_path)
+print(df.head())
+
+# Step 2: Drop non-numeric or target columns if needed
+if 'Class_att' in df.columns:
+    df_features = df.drop(columns=['Class_att'])  # assuming 'Class_att' is the label
+else:
+    df_features = df.copy()
+
+# Step 3: Standardize features
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(df_features)
+
+# Step 4: Elbow Method to determine optimal K
+inertia = []
+K = range(1, 11)
+for k in K:
+    kmeans = KMeans(n_clusters=k, random_state=42)
+    kmeans.fit(X_scaled)
+    inertia.append(kmeans.inertia_)
+
+plt.figure(figsize=(6, 4))
+plt.plot(K, inertia, 'bo-')
+plt.xlabel("Number of Clusters (K)")
+plt.ylabel("Inertia")
+plt.title("Elbow Method to Determine Optimal K")
+plt.grid(True)
+plt.show()
+
+# Step 5: Apply KMeans with chosen K (e.g., K=3)
+optimal_k = 3
+kmeans = KMeans(n_clusters=optimal_k, random_state=42)
+labels = kmeans.fit_predict(X_scaled)
+
+# Step 6: Visualize Clusters using PCA
+pca = PCA(n_components=2)
+X_pca = pca.fit_transform(X_scaled)
+
+plt.figure(figsize=(8, 6))
+sns.scatterplot(x=X_pca[:, 0], y=X_pca[:, 1], hue=labels, palette='Set2', s=100)
+plt.title("K-Means Clustering on Spine Data (PCA View)")
+plt.xlabel("Principal Component 1")
+plt.ylabel("Principal Component 2")
+plt.legend(title='Cluster')
+plt.grid(True)
+plt.show()
+
+# Step 7: Evaluate using Silhouette Score
+score = silhouette_score(X_scaled, labels)
+print(f"Silhouette Score: {score:.2f}")
